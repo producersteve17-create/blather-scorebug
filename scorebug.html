@@ -11,11 +11,16 @@
       overflow: hidden;
     }
 
+    .ticker-wrapper {
+      width: 100%;
+      overflow: hidden;
+    }
+
     .ticker {
       display: flex;
       gap: 50px;
       white-space: nowrap;
-      animation: scroll 20s linear infinite;
+      animation: scroll 60s linear infinite; /* slower scroll */
       font-size: 20px;
       color: white;
       align-items: center;
@@ -33,6 +38,7 @@
       background: rgba(0,0,0,0.5);
       padding: 5px 10px;
       border-radius: 8px;
+      flex-shrink: 0; /* prevent shrinking */
     }
 
     .matchup img {
@@ -50,7 +56,9 @@
   </style>
 </head>
 <body>
-  <div class="ticker" id="ticker"></div>
+  <div class="ticker-wrapper">
+    <div class="ticker" id="ticker"></div>
+  </div>
 
   <script>
     const leagueId = "1267911481467359232";
@@ -68,7 +76,6 @@
       const userMap = {};
       users.forEach(u => userMap[u.user_id] = u);
 
-      // Get current week
       const league = await fetchData("");
       const currentWeek = (league.settings && league.settings.leg) || league.current_week || league.settings?.scoring_period_id || 1;
       const matchups = await fetchData(`matchups/${currentWeek}`);
@@ -82,7 +89,10 @@
       const tickerDiv = document.getElementById("ticker");
       tickerDiv.innerHTML = "";
 
-      Object.values(matchupGroups).forEach(pair => {
+      // Duplicate content for smooth infinite loop
+      const allMatchups = [...Object.values(matchupGroups), ...Object.values(matchupGroups)];
+
+      allMatchups.forEach(pair => {
         const [team1, team2] = pair;
         const r1 = rosters.find(r => r.roster_id === team1.roster_id);
         const r2 = rosters.find(r => r.roster_id === team2.roster_id);
