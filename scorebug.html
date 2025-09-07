@@ -1,122 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Fantasy Scorebug</title>
-  <style>
-    body {
-      margin: 0;
-      background: transparent;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-    }
+<meta charset="UTF-8">
+<title>Fantasy Scorebug</title>
+<style>
+  body {
+    margin: 0;
+    background: transparent;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+  }
 
-    .ticker-wrapper {
-      width: 100%;
-      overflow: hidden;
-    }
+  .ticker-wrapper {
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+  }
 
-    .ticker {
-      display: flex;
-      gap: 50px;
-      white-space: nowrap;
-      animation: scroll 60s linear infinite; /* slower scroll */
-      font-size: 20px;
-      color: white;
-      align-items: center;
-    }
+  .ticker {
+    display: inline-flex;
+    align-items: center;
+  }
 
-    @keyframes scroll {
-      0% { transform: translateX(100%); }
-      100% { transform: translateX(-100%); }
-    }
+  .matchup {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0,0,0,0.5);
+    padding: 5px 10px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    margin-right: 50px;
+  }
 
-    .matchup {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: rgba(0,0,0,0.5);
-      padding: 5px 10px;
-      border-radius: 8px;
-      flex-shrink: 0; /* prevent shrinking */
-    }
+  .matchup img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #fff;
+  }
 
-    .matchup img {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 1px solid #fff;
-    }
-
-    .points {
-      font-weight: bold;
-      margin-left: 5px;
-    }
-  </style>
+  .points {
+    font-weight: bold;
+    margin-left: 5px;
+  }
+</style>
 </head>
 <body>
-  <div class="ticker-wrapper">
-    <div class="ticker" id="ticker"></div>
-  </div>
+<div class="ticker-wrapper">
+  <div class="ticker" id="ticker"></div>
+</div>
 
-  <script>
-    const leagueId = "1267911481467359232";
-    const refreshInterval = 30 * 1000; // refresh every 30s
+<script>
+const leagueId = "1267911481467359232";
+const refreshInterval = 30 * 1000; // update every 30s
+let tickerAnimationDuration = 60; // seconds
 
-    async function fetchData(endpoint) {
-      const res = await fetch(`https://api.sleeper.app/v1/league/${leagueId}/${endpoint}`);
-      return res.json();
-    }
+async function fetchData(endpoint) {
+  const res = await fetch(`https://api.sleeper.app/v1/league/${leagueId}/${endpoint}`);
+  return res.json();
+}
 
-    async function updateTicker() {
-      const users = await fetchData("users");
-      const rosters = await fetchData("rosters");
+async function updateTicker() {
+  const users = await fetchData("users");
+  const rosters = await fetchData("rosters");
+  const league = await fetchData("");
+  const currentWeek = (league.settings && league.settings.leg) || league.current_week || league.settings?.scoring_period_id || 1;
+  const matchups = await fetchData(`matchups/${currentWeek}`);
 
-      const userMap = {};
-      users.forEach(u => userMap[u.user_id] = u);
+  const userMap = {};
+  users.forEach(u => userMap[u.user_id] = u);
 
-      const league = await fetchData("");
-      const currentWeek = (league.settings && league.settings.leg) || league.current_week || league.settings?.scoring_period_id || 1;
-      const matchups = await fetchData(`matchups/${currentWeek}`);
+  const tickerDiv = document.getElementById("ticker");
+  tickerDiv.innerHTML = "";
 
-      const matchupGroups = {};
-      matchups.forEach(m => {
-        if (!matchupGroups[m.matchup_id]) matchupGroups[m.matchup_id] = [];
-        matchupGroups[m.matchup_id].push(m);
-      });
+  // Add all matchups to the ticker
+  const matchupElements = matchups.map(pair => {
+    const r1 = rosters.find(r => r.roster_id === pair.roster_id);
+    const r2 = rosters.find(r => r.roster_id === pair.roster_id + 1); // simplistic pairing
+    const owner1 = userMap[r1?.owner_id];
+    const owner2 = userMap[r2?.owner_id];
 
-      const tickerDiv = document.getElementById("ticker");
-      tickerDiv.innerHTML = "";
+    const avatar1 = owner1?.avatar ? `https://sleepercdn.com/avatars/${owner1.avatar}` : "https://placehold.co/30x30";
+    const avatar2 = owner2?.avatar ? `https://sleepercdn.com/avatars/${owner2.avatar}` : "https://placehold.co/30x30";
 
-      // Duplicate content for smooth infinite loop
-      const allMatchups = [...Object.values(matchupGroups), ...Object.values(matchupGroups)];
-
-      allMatchups.forEach(pair => {
-        const [team1, team2] = pair;
-        const r1 = rosters.find(r => r.roster_id === team1.roster_id);
-        const r2 = rosters.find(r => r.roster_id === team2.roster_id);
-        const owner1 = userMap[r1?.owner_id];
-        const owner2 = userMap[r2?.owner_id];
-
-        const avatar1 = owner1?.avatar ? `https://sleepercdn.com/avatars/${owner1.avatar}` : "https://placehold.co/30x30";
-        const avatar2 = owner2?.avatar ? `https://sleepercdn.com/avatars/${owner2.avatar}` : "https://placehold.co/30x30";
-
-        const matchupDiv = document.createElement("div");
-        matchupDiv.className = "matchup";
-        matchupDiv.innerHTML = `
-          <img src="${avatar1}" alt="logo1"><span>${owner1?.display_name || "Unknown"}</span>
-          <span class="points">${team1.points?.toFixed(1) || 0}</span>
-          vs
-          <img src="${avatar2}" alt="logo2"><span>${owner2?.display_name || "Unknown"}</span>
-          <span class="points">${team2.points?.toFixed(1) || 0}</span>
-        `;
-        tickerDiv.appendChild(matchupDiv);
-      });
-    }
-
-    updateTicker();
-    setInterval(updateTicker, refreshInterval);
-  </script>
-</body>
-</html>
+    const div = document.createElement("div");
+    div.className = "matchup";
+    div.innerHTML = `
+      <img src="${avatar1}" alt="logo1"><span>${owner1?.display_name || "Unknown"}</span>
+      <span class="points">${pair.points?.toFixed(1) || 0}</span>
+      vs
+      <img src="${avatar2}" alt="logo2"><span>${owner2?.display_name || "Unknown"_
