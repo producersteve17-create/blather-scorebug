@@ -26,11 +26,13 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    background: rgba(0,0,0,0.5);
+    background: #ffffff; /* solid white background */
+    color: #000; /* black text */
     padding: 5px 10px;
     border-radius: 8px;
     flex-shrink: 0;
     margin-right: 50px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   }
 
   .matchup img {
@@ -38,7 +40,7 @@
     height: 30px;
     border-radius: 50%;
     object-fit: cover;
-    border: 1px solid #fff;
+    border: 1px solid #000;
   }
 
   .points {
@@ -55,6 +57,15 @@
 <script>
 const leagueId = "1267911481467359232";
 const refreshInterval = 30 * 1000; // refresh every 30s
+
+// Optional: manual mapping of owner/user IDs to team names
+const teamNames = {
+  // "owner_id": "Team Name",
+  // Fill this in if you want actual team names instead of usernames
+  // Example:
+  // "123456789": "Steve's Squad",
+  // "987654321": "Blatherers"
+};
 
 async function fetchData(endpoint) {
   const res = await fetch(`https://api.sleeper.app/v1/league/${leagueId}/${endpoint}`);
@@ -75,7 +86,7 @@ async function updateTicker() {
   const rosterNameMap = {};
   rosters.forEach(r => {
     const owner = users.find(u => u.user_id === r.owner_id);
-    const name = r.settings?.name || owner?.display_name || `Team ${r.roster_id}`;
+    const name = teamNames[r.owner_id] || r.settings?.name || owner?.display_name || `Team ${r.roster_id}`;
     rosterNameMap[r.roster_id] = name;
   });
 
@@ -94,58 +105,4 @@ async function updateTicker() {
     const m2 = pair[1];
 
     const r1 = rosters.find(r => r.roster_id === m1.roster_id);
-    const r2 = rosters.find(r => r.roster_id === m2.roster_id);
-
-    const owner1 = users.find(u => u.user_id === r1?.owner_id);
-    const owner2 = users.find(u => u.user_id === r2?.owner_id);
-
-    const teamName1 = rosterNameMap[m1.roster_id];
-    const teamName2 = rosterNameMap[m2.roster_id];
-
-    const avatar1 = owner1?.avatar ? `https://sleepercdn.com/avatars/${owner1.avatar}` : "https://placehold.co/30x30";
-    const avatar2 = owner2?.avatar ? `https://sleepercdn.com/avatars/${owner2.avatar}` : "https://placehold.co/30x30";
-
-    const div = document.createElement("div");
-    div.className = "matchup";
-    div.innerHTML = `
-      <img src="${avatar1}" alt="logo1"><span>${teamName1}</span>
-      <span class="points">${m1.points?.toFixed(1) || 0}</span>
-      vs
-      <img src="${avatar2}" alt="logo2"><span>${teamName2}</span>
-      <span class="points">${m2.points?.toFixed(1) || 0}</span>
-    `;
-    matchupElements.push(div);
-  });
-
-  // Append original and duplicate for seamless scroll
-  matchupElements.forEach(el => tickerDiv.appendChild(el));
-  matchupElements.forEach(el => tickerDiv.appendChild(el.cloneNode(true)));
-
-  // Adjust animation duration dynamically
-  const tickerWidth = tickerDiv.scrollWidth / 2;
-  const wrapperWidth = document.querySelector(".ticker-wrapper").offsetWidth;
-  const speed = 50; // pixels per second
-  const duration = (tickerWidth + wrapperWidth) / speed;
-
-  tickerDiv.style.animation = `scroll ${duration}s linear infinite`;
-}
-
-// Add keyframes dynamically
-const style = document.createElement("style");
-style.innerHTML = `
-@keyframes scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-.ticker {
-  display: inline-flex;
-  animation: scroll 60s linear infinite;
-}
-`;
-document.head.appendChild(style);
-
-updateTicker();
-setInterval(updateTicker, refreshInterval);
-</script>
-</body>
-</html>
+    const r2 = rosters.find(r => r.roster_id === m2._
