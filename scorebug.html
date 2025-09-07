@@ -74,12 +74,22 @@ async function updateTicker() {
   const tickerDiv = document.getElementById("ticker");
   tickerDiv.innerHTML = "";
 
-  // Generate matchup divs
-  const matchupElements = matchups.map(m => {
-    const r1 = rosters.find(r => r.roster_id === m.roster_id);
-    const matchupId = m.matchup_id;
-    const opponent = matchups.find(o => o.matchup_id === matchupId && o.roster_id !== m.roster_id);
-    const r2 = rosters.find(r => r.roster_id === opponent?.roster_id);
+  // Group matchups by matchup_id
+  const matchupGroups = {};
+  matchups.forEach(m => {
+    if (!matchupGroups[m.matchup_id]) matchupGroups[m.matchup_id] = [];
+    matchupGroups[m.matchup_id].push(m);
+  });
+
+  const matchupElements = [];
+
+  Object.values(matchupGroups).forEach(pair => {
+    if (pair.length < 2) return; // skip incomplete matchups
+    const m1 = pair[0];
+    const m2 = pair[1];
+
+    const r1 = rosters.find(r => r.roster_id === m1.roster_id);
+    const r2 = rosters.find(r => r.roster_id === m2.roster_id);
 
     const avatar1 = r1?.owner_id ? `https://sleepercdn.com/avatars/${users.find(u => u.user_id === r1.owner_id)?.avatar}` : "https://placehold.co/30x30";
     const avatar2 = r2?.owner_id ? `https://sleepercdn.com/avatars/${users.find(u => u.user_id === r2.owner_id)?.avatar}` : "https://placehold.co/30x30";
@@ -88,12 +98,12 @@ async function updateTicker() {
     div.className = "matchup";
     div.innerHTML = `
       <img src="${avatar1}" alt="logo1"><span>${r1?.settings?.name || "Team 1"}</span>
-      <span class="points">${m.points?.toFixed(1) || 0}</span>
+      <span class="points">${m1.points?.toFixed(1) || 0}</span>
       vs
       <img src="${avatar2}" alt="logo2"><span>${r2?.settings?.name || "Team 2"}</span>
-      <span class="points">${opponent?.points?.toFixed(1) || 0}</span>
+      <span class="points">${m2.points?.toFixed(1) || 0}</span>
     `;
-    return div;
+    matchupElements.push(div);
   });
 
   // Append original and duplicate for seamless scroll
