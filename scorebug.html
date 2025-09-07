@@ -91,16 +91,23 @@ async function updateTicker() {
     const r1 = rosters.find(r => r.roster_id === m1.roster_id);
     const r2 = rosters.find(r => r.roster_id === m2.roster_id);
 
-    const avatar1 = r1?.owner_id ? `https://sleepercdn.com/avatars/${users.find(u => u.user_id === r1.owner_id)?.avatar}` : "https://placehold.co/30x30";
-    const avatar2 = r2?.owner_id ? `https://sleepercdn.com/avatars/${users.find(u => u.user_id === r2.owner_id)?.avatar}` : "https://placehold.co/30x30";
+    const owner1 = users.find(u => u.user_id === r1?.owner_id);
+    const owner2 = users.find(u => u.user_id === r2?.owner_id);
+
+    // Use team name if available, otherwise fallback to owner's display name
+    const teamName1 = r1?.settings?.name || owner1?.display_name || "Team 1";
+    const teamName2 = r2?.settings?.name || owner2?.display_name || "Team 2";
+
+    const avatar1 = owner1?.avatar ? `https://sleepercdn.com/avatars/${owner1.avatar}` : "https://placehold.co/30x30";
+    const avatar2 = owner2?.avatar ? `https://sleepercdn.com/avatars/${owner2.avatar}` : "https://placehold.co/30x30";
 
     const div = document.createElement("div");
     div.className = "matchup";
     div.innerHTML = `
-      <img src="${avatar1}" alt="logo1"><span>${r1?.settings?.name || "Team 1"}</span>
+      <img src="${avatar1}" alt="logo1"><span>${teamName1}</span>
       <span class="points">${m1.points?.toFixed(1) || 0}</span>
       vs
-      <img src="${avatar2}" alt="logo2"><span>${r2?.settings?.name || "Team 2"}</span>
+      <img src="${avatar2}" alt="logo2"><span>${teamName2}</span>
       <span class="points">${m2.points?.toFixed(1) || 0}</span>
     `;
     matchupElements.push(div);
