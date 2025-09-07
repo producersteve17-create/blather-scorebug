@@ -105,4 +105,58 @@ async function updateTicker() {
     const m2 = pair[1];
 
     const r1 = rosters.find(r => r.roster_id === m1.roster_id);
-    const r2 = rosters.find(r => r.roster_id === m2._
+    const r2 = rosters.find(r => r.roster_id === m2.roster_id);
+
+    const owner1 = users.find(u => u.user_id === r1?.owner_id);
+    const owner2 = users.find(u => u.user_id === r2?.owner_id);
+
+    const teamName1 = rosterNameMap[m1.roster_id];
+    const teamName2 = rosterNameMap[m2.roster_id];
+
+    const avatar1 = owner1?.avatar ? `https://sleepercdn.com/avatars/${owner1.avatar}` : "https://placehold.co/30x30";
+    const avatar2 = owner2?.avatar ? `https://sleepercdn.com/avatars/${owner2.avatar}` : "https://placehold.co/30x30";
+
+    const div = document.createElement("div");
+    div.className = "matchup";
+    div.innerHTML = `
+      <img src="${avatar1}" alt="logo1"><span>${teamName1}</span>
+      <span class="points">${m1.points?.toFixed(1) || 0}</span>
+      vs
+      <img src="${avatar2}" alt="logo2"><span>${teamName2}</span>
+      <span class="points">${m2.points?.toFixed(1) || 0}</span>
+    `;
+    matchupElements.push(div);
+  });
+
+  // Append original and duplicate for seamless scroll
+  matchupElements.forEach(el => tickerDiv.appendChild(el));
+  matchupElements.forEach(el => tickerDiv.appendChild(el.cloneNode(true)));
+
+  // Adjust animation duration dynamically
+  const tickerWidth = tickerDiv.scrollWidth / 2;
+  const wrapperWidth = document.querySelector(".ticker-wrapper").offsetWidth;
+  const speed = 50; // pixels per second
+  const duration = (tickerWidth + wrapperWidth) / speed;
+
+  tickerDiv.style.animation = `scroll ${duration}s linear infinite`;
+}
+
+// Add keyframes dynamically
+const style = document.createElement("style");
+style.innerHTML = `
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker {
+  display: inline-flex;
+  animation: scroll 60s linear infinite;
+}
+`;
+document.head.appendChild(style);
+
+updateTicker();
+setInterval(updateTicker, refreshInterval);
+</script>
+</body>
+</html>
