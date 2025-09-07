@@ -54,41 +54,4 @@
 
 <script>
 const leagueId = "1267911481467359232";
-const refreshInterval = 30 * 1000; // update every 30s
-let tickerAnimationDuration = 60; // seconds
-
-async function fetchData(endpoint) {
-  const res = await fetch(`https://api.sleeper.app/v1/league/${leagueId}/${endpoint}`);
-  return res.json();
-}
-
-async function updateTicker() {
-  const users = await fetchData("users");
-  const rosters = await fetchData("rosters");
-  const league = await fetchData("");
-  const currentWeek = (league.settings && league.settings.leg) || league.current_week || league.settings?.scoring_period_id || 1;
-  const matchups = await fetchData(`matchups/${currentWeek}`);
-
-  const userMap = {};
-  users.forEach(u => userMap[u.user_id] = u);
-
-  const tickerDiv = document.getElementById("ticker");
-  tickerDiv.innerHTML = "";
-
-  // Add all matchups to the ticker
-  const matchupElements = matchups.map(pair => {
-    const r1 = rosters.find(r => r.roster_id === pair.roster_id);
-    const r2 = rosters.find(r => r.roster_id === pair.roster_id + 1); // simplistic pairing
-    const owner1 = userMap[r1?.owner_id];
-    const owner2 = userMap[r2?.owner_id];
-
-    const avatar1 = owner1?.avatar ? `https://sleepercdn.com/avatars/${owner1.avatar}` : "https://placehold.co/30x30";
-    const avatar2 = owner2?.avatar ? `https://sleepercdn.com/avatars/${owner2.avatar}` : "https://placehold.co/30x30";
-
-    const div = document.createElement("div");
-    div.className = "matchup";
-    div.innerHTML = `
-      <img src="${avatar1}" alt="logo1"><span>${owner1?.display_name || "Unknown"}</span>
-      <span class="points">${pair.points?.toFixed(1) || 0}</span>
-      vs
-      <img src="${avatar2}" alt="logo2"><span>${owner2?.display_name || "Unknown"_
+const
