@@ -68,11 +68,16 @@ async function updateTicker() {
   const currentWeek = (league.settings && league.settings.leg) || league.current_week || league.settings?.scoring_period_id || 1;
   const matchups = await fetchData(`matchups/${currentWeek}`);
 
-  const userMap = {};
-  users.forEach(u => userMap[u.user_id] = u);
-
   const tickerDiv = document.getElementById("ticker");
   tickerDiv.innerHTML = "";
+
+  // Map roster_id to team name or owner display name
+  const rosterNameMap = {};
+  rosters.forEach(r => {
+    const owner = users.find(u => u.user_id === r.owner_id);
+    const name = r.settings?.name || owner?.display_name || `Team ${r.roster_id}`;
+    rosterNameMap[r.roster_id] = name;
+  });
 
   // Group matchups by matchup_id
   const matchupGroups = {};
@@ -94,9 +99,8 @@ async function updateTicker() {
     const owner1 = users.find(u => u.user_id === r1?.owner_id);
     const owner2 = users.find(u => u.user_id === r2?.owner_id);
 
-    // Use team name if available, otherwise fallback to owner's display name
-    const teamName1 = r1?.settings?.name || owner1?.display_name || "Team 1";
-    const teamName2 = r2?.settings?.name || owner2?.display_name || "Team 2";
+    const teamName1 = rosterNameMap[m1.roster_id];
+    const teamName2 = rosterNameMap[m2.roster_id];
 
     const avatar1 = owner1?.avatar ? `https://sleepercdn.com/avatars/${owner1.avatar}` : "https://placehold.co/30x30";
     const avatar2 = owner2?.avatar ? `https://sleepercdn.com/avatars/${owner2.avatar}` : "https://placehold.co/30x30";
