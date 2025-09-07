@@ -54,4 +54,77 @@
 
 <script>
 const leagueId = "1267911481467359232";
-const
+const refreshInterval = 30 * 1000; // refresh every 30s
+
+async function fetchData(endpoint) {
+  const res = await fetch(`https://api.sleeper.app/v1/league/${leagueId}/${endpoint}`);
+  return res.json();
+}
+
+async function updateTicker() {
+  const users = await fetchData("users");
+  const rosters = await fetchData("rosters");
+  const league = await fetchData("");
+  const currentWeek = (league.settings && league.settings.leg) || league.current_week || league.settings?.scoring_period_id || 1;
+  const matchups = await fetchData(`matchups/${currentWeek}`);
+
+  const userMap = {};
+  users.forEach(u => userMap[u.user_id] = u);
+
+  const tickerDiv = document.getElementById("ticker");
+  tickerDiv.innerHTML = "";
+
+  // Generate matchup divs
+  const matchupElements = matchups.map(m => {
+    const r1 = rosters.find(r => r.roster_id === m.roster_id);
+    const matchupId = m.matchup_id;
+    const opponent = matchups.find(o => o.matchup_id === matchupId && o.roster_id !== m.roster_id);
+    const r2 = rosters.find(r => r.roster_id === opponent?.roster_id);
+
+    const avatar1 = r1?.owner_id ? `https://sleepercdn.com/avatars/${users.find(u => u.user_id === r1.owner_id)?.avatar}` : "https://placehold.co/30x30";
+    const avatar2 = r2?.owner_id ? `https://sleepercdn.com/avatars/${users.find(u => u.user_id === r2.owner_id)?.avatar}` : "https://placehold.co/30x30";
+
+    const div = document.createElement("div");
+    div.className = "matchup";
+    div.innerHTML = `
+      <img src="${avatar1}" alt="logo1"><span>${r1?.settings?.name || "Team 1"}</span>
+      <span class="points">${m.points?.toFixed(1) || 0}</span>
+      vs
+      <img src="${avatar2}" alt="logo2"><span>${r2?.settings?.name || "Team 2"}</span>
+      <span class="points">${opponent?.points?.toFixed(1) || 0}</span>
+    `;
+    return div;
+  });
+
+  // Append original and duplicate for seamless scroll
+  matchupElements.forEach(el => tickerDiv.appendChild(el));
+  matchupElements.forEach(el => tickerDiv.appendChild(el.cloneNode(true)));
+
+  // Adjust animation duration dynamically
+  const tickerWidth = tickerDiv.scrollWidth / 2;
+  const wrapperWidth = document.querySelector(".ticker-wrapper").offsetWidth;
+  const speed = 50; // pixels per second
+  const duration = (tickerWidth + wrapperWidth) / speed;
+
+  tickerDiv.style.animation = `scroll ${duration}s linear infinite`;
+}
+
+// Add keyframes dynamically
+const style = document.createElement("style");
+style.innerHTML = `
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker {
+  display: inline-flex;
+  animation: scroll 60s linear infinite;
+}
+`;
+document.head.appendChild(style);
+
+updateTicker();
+setInterval(updateTicker, refreshInterval);
+</script>
+</body>
+</html>
